@@ -10,5 +10,8 @@ usage : EigenSpace [Input DTI] [Output Vector Field Name] [EigenVectorNumber]<op
 VECTORFIELD (BETA) : Compute the difference vector field between two Vector Fields and an angular image of the angle between the two vectors 
 usage : VectorFieldComp [Input Vector Field 1] [Input Vector Field 2] [Output Vector Field Name] [Output Angular Map] <options>
 
+HISTOGRAM (RC) : Generate a text file containing the values of each voxel of an input volume.
+Histogram [input 3D grey level Image] [output text file with not null values]
+
 These codes ARE NOT optimised or Object Oriented. It's naturally possible but I'm currently using them as research tools. 
 I'll use them into a processing pipeline so I'm working on a bigger software combining them, built with classes and with a Parser for CLI arguments.

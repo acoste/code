@@ -13,3 +13,5 @@ The scripts are written in tcsh, and most of the time use specialized NeuroImagi
 
 The web directory contains some code I used to set an online image viewer.
 I did NOT develop it, but I contributed.
+
+The Matlab directory contains some matlab functions or code to process images or text files associated to the tensor study
