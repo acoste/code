@@ -1,0 +1,406 @@
+#!/usr/bin/tcsh
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+#
+# Author : COSTE Arthur
+# Date : June 14th, 2012
+#
+# Function : Create a mosaic image of Color FA for Quality Control purpose
+#
+# Input : Color FA volume 25 DIRECTIONS
+#
+# Output : Mozaic image + contrast and brightness enhancement + Rotated Color image generation
+#
+# Status : Working
+#
+# Version : 2-25-2 (version 2 (9pics) for 25 directions protocol 2 : contrast enhancement and hue images)
+#
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+# Data location
+
+set data_dir = /usr/sci/projects/neuro/data_syl/ACEOngoingdata/all_dicom_april10/data
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+# Tools
+
+set toolloc = /usr/sci/projects/neuro/software/bin
+set unu_cmd = $toolloc/unu
+# Info UNU DICE : AXIS 0 = RGB channels AXIS 1 = sagittal, AXIS 2 = CORONAL, AXIS 3 = axial
+set convert_cmd = /usr/bin/convert
+# NOTE : you need to use convert command from ImageMagick and not ITK converter
+
+#----------------------------------------------------------------------------------------------------------------------------------------------
+# Parameters 
+#echo "test"
+set sagittal_slice_1 = 36
+set sagittal_slice_2 = 48
+set sagittal_slice_3 = 60
+
+set coronal_slice_1 = 36
+set coronal_slice_2 = 48
+set coronal_slice_3 = 60
+
+set axial_slice_1 = 40
+set axial_slice_2 = 48
+set axial_slice_3 = 56
+
+set image_size = 300
+set mosaic_height = $image_size
+set mosaic_width = 900
+
+echo "---------------------------------------------------------------------------------------------------------------------"
+echo
+echo "\t\t\t\t\t\t begining of COLOR FA QC SCRIPT"
+echo
+echo "---------------------------------------------------------------------------------------------------------------------"
+
+echo
+echo "chosen parameters for slice extraction : "
+echo "\t\t\t\t\t > axial slice : $axial_slice_1 $axial_slice_2 $axial_slice_3"
+echo "\t\t\t\t\t > coronal slice : $coronal_slice_1 $coronal_slice_2 $coronal_slice_3"
+echo "\t\t\t\t\t > sagittal slice : $sagittal_slice_1 $sagittal_slice_2 $sagittal_slice_3"
+echo "\t\t\t\t\t > mosaic size : $mosaic_width x $mosaic_height pixels"
+echo
+
+#----------------------------------------------------------------------------------------------------------------------------------------------
+# Main Code
+
+set all_site = $data_dir/PHIIBIS
+
+set cpt = 1			
+
+foreach scanning_site ($all_site)
+
+	set site = $scanning_site:t
+	set colorfa_list = $data_dir/$site/??????_*/DTI_bmatrix_corrected/qc_bmatrix/*DWI*_QCed_DTI_colorFA.nrrd
+	echo $colorfa_list
+	#echo $#colorfa_list
+	
+	#set up data directories (hue directory is a special directory for images with spectrum shift to allow colorblind people to see correctly our images)
+	set dataloc = $data_dir/ColorFA_QC/$site/9pics_mosaic/
+	if (! -e $dataloc) then
+		echo "\033[s\033[1;32mcreating scanning site QC directory >>> \c" 
+		mkdir $dataloc
+		echo "[done]\033[u\033[0m"
+	endif
+
+	set hue_dir = $data_dir/ColorFA_QC/$site/9pics_mosaic/hue
+	if (! -e $hue_dir) then
+		echo "\033[s\033[1;32mcreating scanning site Hue images directory >>> \c" 
+		mkdir $hue_dir
+		echo "[done]\033[u\033[0m"
+	endif
+
+	set thumbs_dir = $dataloc/thumbs
+	if (! -e $thumbs_dir) then
+		echo "\033[s\033[1;32mcreating scanning site QC thumbs directory >>> \c"  
+		mkdir $thumbs_dir
+		echo "[done]\033[u\033[0m"
+	endif
+
+	set hue_thumbs_dir = $hue_dir/thumbs
+	if (! -e $hue_thumbs_dir) then
+		echo "\033[s\033[1;32mcreating scanning site Hue images thumbs directory >>> \c"  
+		mkdir $hue_thumbs_dir
+		echo "[done]\033[u\033[0m"
+	endif
+	
+	#processing each colorFA volume ------------------------------------------------------------------------
+	foreach colorfa ($colorfa_list)
+
+		echo $dataloc
+		echo $colorfa
+		set case_id = $colorfa:h:h:h:t	
+		echo "processing case $cpt : $case_id"
+		
+		# test to define the acquisition number and cast ------------------------------------------------------------------------
+		set diff_seq = $data_dir/$site/$case_id/DTI_bmatrix_corrected/qc_bmatrix/$case_id'_'DWI*_QCed_DTI_colorFA.nrrd
+		set ind = `echo $colorfa:t | cut -c15-16`
+		set ind_2 = `echo $colorfa:t | cut -c19-20`
+		echo $ind
+		echo $ind_2
+
+		if($ind == "_Q") then
+		    set ind = ''
+		    echo $ind
+	      
+		else if ($ind == "_D") then
+   
+		    if ( $ind_2 == "_2") then
+			set ind = $ind_2
+		else if ($ind_2 == "_3") then
+			set ind = $ind_2
+		else if ($ind_2 == "_4") then
+			set ind = $ind_2
+		else if ($ind_2 == "_5") then
+			set ind = $ind_2
+		else if ($ind_2 == "_6") then
+			set ind = $ind_2
+		else if ($ind_2 == "_7") then
+			set ind = $ind_2
+		else if ($ind_2 == "_8") then
+			set ind = $ind_2
+		    else 
+		    set ind = ''
+		    echo $ind
+
+		    endif
+		endif
+		echo $ind
+
+		 	    #extracting the chosen slice with unu => dicing volume ------------------------------------------------------------------------
+			    set mosaic = $dataloc/$case_id'_'ColorFA_QC_mosaic$ind.png
+			    set labeled_mosaic_jpg = $dataloc/$case_id'_'ColorFA_QC$ind.jpg
+
+			if (! -e $labeled_mosaic_jpg) then
+				echo "\033[s\033[1;32mextracting chosen sagittal slice\033[u\033[0m"
+				set chosen_sagittal_slice_1 = $dataloc/sagittal_slice_$ind'_'$sagittal_slice_1.png
+				set chosen_sagittal_slice_2 = $dataloc/sagittal_slice_$ind'_'$sagittal_slice_2.png
+				set chosen_sagittal_slice_3 = $dataloc/sagittal_slice_$ind'_'$sagittal_slice_3.png
+				if (! -e $chosen_sagittal_slice_1 && ! -e $chosen_sagittal_slice_1 && ! -e $chosen_sagittal_slice_1) then
+					echo "slicing volume"
+					$unu_cmd dice -i $colorfa -o $dataloc/sagittal_slice_$ind'_' --axis 1
+					echo "done"
+					#mv $dataloc:h/*.png $dataloc
+				endif
+				
+			    set all_sagittal_slice = $dataloc/*sagittal_slice_*
+
+				foreach slice ($all_sagittal_slice)
+					if ($slice != $chosen_sagittal_slice_1 && $slice != $chosen_sagittal_slice_2 && $slice != $chosen_sagittal_slice_3) then
+						echo "\033[s\033[1;31mremoving undesirable sagittal slices >>> \c"
+						rm $slice
+						#sleep 0.02
+						echo "[done]\033[u\033[0m"
+					endif
+				end
+
+				echo "\033[s\033[1;32mextracting chosen coronal slice\033[u\033[0m"
+				set chosen_coronal_slice_1 = $dataloc/coronal_slice_$ind'_'$coronal_slice_1.png
+				set chosen_coronal_slice_2 = $dataloc/coronal_slice_$ind'_'$coronal_slice_2.png
+				set chosen_coronal_slice_3 = $dataloc/coronal_slice_$ind'_'$coronal_slice_3.png
+				if (! -e $chosen_coronal_slice_1 && ! -e $chosen_coronal_slice_2 && ! -e $chosen_coronal_slice_3) then
+					echo "slicing volume"
+					$unu_cmd dice -i $colorfa -o $dataloc/coronal_slice_$ind'_' --axis 2
+					echo "done"
+				endif
+
+				set all_coronal_slice = $dataloc/*coronal_slice*
+
+				foreach slice ($all_coronal_slice)
+					if ($slice != $chosen_coronal_slice_1 && $slice != $chosen_coronal_slice_2 && $slice != $chosen_coronal_slice_3) then
+						echo "\033[s\033[1;31mremoving undesirable coronal slices >>> \c"
+						rm $slice
+						#sleep 0.02
+						echo "[done]\033[u\033[0m"
+					endif
+				end
+
+				echo "\033[s\033[1;32mextracting chosen axial slice\033[u\033[0m"
+				set chosen_axial_slice_1 = $dataloc/axial_slice_$ind'_'$axial_slice_1.png
+				set chosen_axial_slice_2 = $dataloc/axial_slice_$ind'_'$axial_slice_2.png
+				set chosen_axial_slice_3 = $dataloc/axial_slice_$ind'_'$axial_slice_3.png
+
+				if (! -e $chosen_axial_slice_1 && ! -e $chosen_axial_slice_2 && ! -e $chosen_axial_slice_3 ) then
+					echo "slicing volume"
+					$unu_cmd dice -i $colorfa -o $dataloc/axial_slice_$ind'_' --axis 3
+					echo "done"
+				endif
+
+				set all_axial_slice = $dataloc/*axial_slice*
+
+				foreach slice ($all_axial_slice)
+					if ($slice != $chosen_axial_slice_1 && $slice != $chosen_axial_slice_2 && $slice != $chosen_axial_slice_3) then
+						echo "\033[s\033[1;31mremoving undesirable axial slices >>> \c"
+						rm $slice
+						#sleep 0.01
+						echo "[done]\033[u\033[0m"
+					endif
+				end	
+
+				# Set Correct Orientation to sagital and coronal ------------------------------------------------------------------------
+				set rotate_sagittal_slice_1 = $dataloc/rotate_sagittal_slice$ind'_'$sagittal_slice_1.png
+				set rotate_sagittal_slice_2 = $dataloc/rotate_sagittal_slice$ind'_'$sagittal_slice_2.png
+				set rotate_sagittal_slice_3 = $dataloc/rotate_sagittal_slice$ind'_'$sagittal_slice_3.png
+
+				set rotate_coronal_slice_1 = $dataloc/rotate_coronal_slice$ind'_'$sagittal_slice_1.png
+				set rotate_coronal_slice_2 = $dataloc/rotate_coronal_slice$ind'_'$sagittal_slice_2.png
+				set rotate_coronal_slice_3 = $dataloc/rotate_coronal_slice$ind'_'$sagittal_slice_3.png
+
+				set rotate_axial_slice_1 = $dataloc/rotate_axial_slice$ind'_'$axial_slice_1.png
+				set rotate_axial_slice_2 = $dataloc/rotate_axial_slice$ind'_'$axial_slice_2.png
+				set rotate_axial_slice_3 = $dataloc/rotate_axial_slice$ind'_'$axial_slice_3.png
+
+				echo "\033[s\033[1;32mrotating sagittal and coronal slices >>> \c"
+				if (! -e $rotate_sagittal_slice_1 && ! -e $rotate_sagittal_slice_2 && ! -e $rotate_sagittal_slice_3) then
+					$convert_cmd $chosen_sagittal_slice_1 -rotate 180 $rotate_sagittal_slice_1
+					$convert_cmd $chosen_sagittal_slice_2 -rotate 180 $rotate_sagittal_slice_2
+					$convert_cmd $chosen_sagittal_slice_3 -rotate 180 $rotate_sagittal_slice_3
+				endif 
+
+				if (! -e $rotate_coronal_slice_1 && ! -e $rotate_coronal_slice_2 && ! -e $rotate_coronal_slice_3) then
+					$convert_cmd $chosen_coronal_slice_1 -rotate 180 $rotate_coronal_slice_1
+					$convert_cmd $chosen_coronal_slice_2 -rotate 180 $rotate_coronal_slice_2
+					$convert_cmd $chosen_coronal_slice_3 -rotate 180 $rotate_coronal_slice_3
+				endif 
+
+				if (! -e $rotate_axial_slice_1 && ! -e $rotate_axial_slice_1 && ! -e $rotate_axial_slice_3) then
+					$convert_cmd $chosen_axial_slice_1 -rotate 0 $rotate_axial_slice_1
+					$convert_cmd $chosen_axial_slice_2 -rotate 0 $rotate_axial_slice_2
+					$convert_cmd $chosen_axial_slice_3 -rotate 0 $rotate_axial_slice_3
+				endif 
+				echo "[done]\033[u\033[0m"
+
+				# resize images ------------------------------------------------------------------------------------------------------------------------------------------------
+				set resized_rotate_sagittal_slice_1 = $dataloc/resised_rotate_sagittal_slice$ind'_'$sagittal_slice_1.png
+				set resized_rotate_sagittal_slice_2 = $dataloc/resised_rotate_sagittal_slice$ind'_'$sagittal_slice_2.png
+				set resized_rotate_sagittal_slice_3 = $dataloc/resised_rotate_sagittal_slice$ind'_'$sagittal_slice_3.png
+
+				set resized_rotate_coronal_slice_1 = $dataloc/resised_rotate_coronal_slice$ind'_'$coronal_slice_1.png
+				set resized_rotate_coronal_slice_2 = $dataloc/resised_rotate_coronal_slice$ind'_'$coronal_slice_2.png
+				set resized_rotate_coronal_slice_3 = $dataloc/resised_rotate_coronal_slice$ind'_'$coronal_slice_3.png
+
+				set resized_rotate_axial_slice_1 = $dataloc/resised_rotate_axial_slice$ind'_'$axial_slice_1.png
+				set resized_rotate_axial_slice_2 = $dataloc/resised_rotate_axial_slice$ind'_'$axial_slice_2.png
+				set resized_rotate_axial_slice_3 = $dataloc/resised_rotate_axial_slice$ind'_'$axial_slice_3.png
+
+				set resize_param = "300x300\!"
+				echo "\033[s\033[1;32mresizing slices >>> \c"
+				if (! -e $resized_rotate_sagittal_slice_1 && ! -e $resized_rotate_sagittal_slice_2 && ! -e $resized_rotate_sagittal_slice_3) then
+					$convert_cmd $rotate_sagittal_slice_1 -flop -resize $resize_param $resized_rotate_sagittal_slice_1
+					$convert_cmd $rotate_sagittal_slice_2 -flop -resize $resize_param $resized_rotate_sagittal_slice_2
+					$convert_cmd $rotate_sagittal_slice_3 -flop -resize $resize_param $resized_rotate_sagittal_slice_3
+				endif 
+
+				if (! -e $resized_rotate_coronal_slice_1 && ! -e $resized_rotate_coronal_slice_2 && ! -e $resized_rotate_coronal_slice_3) then
+					$convert_cmd $rotate_coronal_slice_1 -flop -resize $resize_param $resized_rotate_coronal_slice_1
+					$convert_cmd $rotate_coronal_slice_2 -flop -resize $resize_param $resized_rotate_coronal_slice_2
+					$convert_cmd $rotate_coronal_slice_3 -flop -resize $resize_param $resized_rotate_coronal_slice_3
+				endif 
+
+				if (! -e $resized_rotate_axial_slice_1 && ! -e $resized_rotate_axial_slice_2 && ! -e $resized_rotate_axial_slice_3) then
+					$convert_cmd $rotate_axial_slice_1 -resize $resize_param $resized_rotate_axial_slice_1
+					$convert_cmd $rotate_axial_slice_2 -resize $resize_param $resized_rotate_axial_slice_2
+					$convert_cmd $rotate_axial_slice_3 -resize $resize_param $resized_rotate_axial_slice_3
+				endif 
+				echo "[done]\033[u\033[0m"
+
+				echo "\033[s\033[1;32mcreating slice mosaic >>> \c"
+				set axial_mosaic = $dataloc/axial_mosaic.png
+				set coronal_mosaic = $dataloc/coronal_mosaic.png
+				set sagital_mosaic = $dataloc/sagital_mosaic.png
+
+				if (! -e $axial_mosaic && ! -e $coronal_mosaic && ! -e $sagital_mosaic) then
+					$convert_cmd $resized_rotate_axial_slice_1 $resized_rotate_axial_slice_2 $resized_rotate_axial_slice_3 +append $axial_mosaic
+					$convert_cmd $resized_rotate_coronal_slice_1 $resized_rotate_coronal_slice_2 $resized_rotate_coronal_slice_3 +append $coronal_mosaic
+					$convert_cmd $resized_rotate_sagittal_slice_1 $resized_rotate_sagittal_slice_2 $resized_rotate_sagittal_slice_3 +append $sagital_mosaic
+				endif
+				echo "[done]\033[u\033[0m"
+
+				echo "\033[s\033[1;32mcreating mosaic >>> \c"
+				if (! -e $mosaic) then
+					$convert_cmd $axial_mosaic $coronal_mosaic $sagital_mosaic -append $mosaic
+				endif
+				echo "[done]\033[u\033[0m"
+
+				set useless_png_img = $dataloc/*_rotate_*.png
+				set original_slice = $dataloc/*_slice*.png
+					echo "\033[s\033[1;31mremoving undesirable images >>> \c"
+					rm $useless_png_img
+					rm $original_slice
+					rm $axial_mosaic
+					rm $coronal_mosaic
+					rm $sagital_mosaic
+					#sleep 0.01
+					echo "[done]\033[u\033[0m"
+					
+
+				set labeled_mosaic = $dataloc/$case_id'_'ColorFA_QC_labeled_mosaic_$ind.png
+
+				#create caption with case id to append to the image ------------------------------------------------------------------------------------------------------------------------------------------------
+				set caption = $dataloc/caption.png
+				set protocol = '_ColorFA_QC'
+				set caption_text = "$case_id$protocol$ind"
+				if (! -e $caption) then
+					echo "\033[s\033[1;32mcreating caption >>> \c"
+					$convert_cmd $mosaic -background black -fill white -pointsize 20 -size $mosaic_width'x'35 -gravity center caption:$caption_text $caption
+					echo "[done]\033[u\033[0m"
+				endif
+
+				set caption_img = $dataloc/caption-1.png
+				if (! -e $labeled_mosaic) then
+					echo "\033[s\033[1;32menhancing contrast >>> \c"
+					$convert_cmd $mosaic -auto-level -auto-level $mosaic
+					echo "[done]\033[u\033[0m"
+					echo "\033[s\033[1;32mappending caption to mosaic >>> \c"
+					$convert_cmd $mosaic $caption_img -append $labeled_mosaic
+					echo "[done]\033[u\033[0m"
+				endif
+
+				echo "\033[s\033[1;31mremoving caption image >>> \c"
+				rm $dataloc/caption*.png
+				echo "[done]\033[u\033[0m"
+				#/usr/bin/convert mosaic.png -background black  -fill white -pointsize 24 -size 900x25  caption:'This is a test' caption.png //caption
+				#/usr/bin/convert mosaic.png caption-1.png -append image_test.png // les mettre ensemble
+				
+				set enhanced_labeled_mosaic = $dataloc/$case_id'_'ColorFA_QC_labeled_mosaic_$ind'_'enhanced.png
+				if(! -e $enhanced_labeled_mosaic) then
+					echo "\033[s\033[1;31menhance contrast of image >>> \c"
+					$convert_cmd $labeled_mosaic -modulate 125,125 $enhanced_labeled_mosaic
+					echo "[done]\033[u\033[0m"
+				endif
+
+				set hue_mosaic = $hue_dir/$case_id'_'ColorFA_QC_labeled_hue_mosaic_$ind'_'.png
+				if (! -e $hue_mosaic) then
+					echo "\033[s\033[1;32mcreating hue image >>> \c"
+					$convert_cmd $enhanced_labeled_mosaic -modulate 100,100,66 $hue_mosaic 
+					echo "[done]\033[u\033[0m"
+				endif			
+
+				if (! -e $labeled_mosaic_jpg) then
+					echo "\033[s\033[1;32mconvert image to jpg >>> \c"
+					$convert_cmd $enhanced_labeled_mosaic $labeled_mosaic_jpg
+					echo "[done]\033[u\033[0m"
+				endif
+
+				set hue_labeled_mosaic_jpg = $hue_dir/$case_id'_'hue_ColorFA_QC$ind.jpg
+				if (! -e $hue_labeled_mosaic_jpg) then
+					echo "\033[s\033[1;32mconvert image to jpg >>> \c"
+					$convert_cmd $hue_mosaic  $hue_labeled_mosaic_jpg
+					echo "[done]\033[u\033[0m"
+				endif
+			endif
+			
+			#create thumbnail for the image ------------------------------------------------------------------------------------------------------------------------------------------------
+			set thumbnail = $dataloc/thumbs/$case_id'_'ColorFA_QC$ind.jpg
+			set hue_thumbnail = $hue_dir/thumbs/$case_id'_'hue_ColorFA_QC$ind.jpg
+			set thumb_size = "350x363\!"
+			if (! -e $thumbnail) then
+				echo "\033[s\033[1;32mcreate thumbnail >>> \c"
+				$convert_cmd $enhanced_labeled_mosaic -resize $thumb_size $thumbnail
+				echo "[done]\033[u\033[0m"
+			endif 	
+
+			if (! -e $hue_thumbnail) then
+				echo "\033[s\033[1;32mcreate thumbnail >>> \c"
+				$convert_cmd $hue_labeled_mosaic_jpg -resize $thumb_size $hue_thumbnail
+				echo "[done]\033[u\033[0m"
+			endif 	
+			# echo "test"
+			# if ( -e $labeled_mosaic) then
+				echo "\033[s\033[1;32mremove png image >>> \c"
+				rm $dataloc/*.png #$labeled_mosaic
+				rm $hue_dir/*.png #$labeled_mosaic
+				echo "[done]\033[u\033[0m"
+			# endif
+	
+	end
+
+end
+
+echo
+echo "---------------------------------------------------------------------------------------------------------------------"
+echo
+echo "\t\t\t\t\t\t end of COLOR FA QC SCRIPT"
+echo
+echo "---------------------------------------------------------------------------------------------------------------------"
+
