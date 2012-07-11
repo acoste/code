@@ -4,4 +4,12 @@ Contact : acoste@sci.utah.edu
 
 ---------------------------------------------------------------------------------
 
-This directory contains a wide range of code I made or modify to process MRI files such DWI sets, DTI, header or various types of images (2D,3D,4D,9D...).
+This directory contains a wide range of code I made or modified to process MRI files such as DWI sets, DTI, header or various types of images (2D,3D,4D,9D...).
+If the code is not mine I'll give credit to it's authors and links to get it.
+
+The code is developped and used in a LINUX environment (OpenSuse 11.4) and may require some external libraries such as ITK, VTK, OpenGL...
+
+The scripts are writen in tcsh, and most of the time use specialized NeuroImaging software such as "unu", "dtiestim" and others. Some of them are available.
+
+The web directory contain some code I used to set an online image viewer.
+I did NOT developed it, but I contributed.
