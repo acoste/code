@@ -6,4 +6,4 @@ Contact : acoste@sci.utah.edu
 
 EIGENSPACE (BETA) : Compute EigenSpaces associated to a second order diffusion tensor.
  
-VECTORFIELD (BETA) : Compute the difference vector fields between two Vector Fields and an angular image of the angle between the two vectors 
+VECTORFIELD (BETA) : Compute the difference vector field between two Vector Fields and an angular image of the angle between the two vectors 
