@@ -12,4 +12,4 @@ The code is developped and used in a LINUX environment (OpenSuse 11.4) and may r
 The scripts are written in tcsh, and most of the time use specialized NeuroImaging software such as "unu", "dtiestim" and others. Some of them are available.
 
 The web directory contains some code I used to set an online image viewer.
-I did NOT developed it, but I contributed.
+I did NOT develop it, but I contributed.
