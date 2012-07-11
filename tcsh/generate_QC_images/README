@@ -7,4 +7,4 @@ Contact : acoste@sci.utah.edu
 This directory contains the scripts I made to generate mosaic images from an original ColorFA input Volume.
 The script slice the volume to extract 9 images, and then process them and append them into a mosaic image.
 
-This script is specific to each aquisition protocol and is part of the ColorFA Quality Control Pipeline. 
+Scripts are specific to each aquisition protocol and is part of the ColorFA Quality Control Pipeline. 
