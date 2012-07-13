@@ -1,0 +1,250 @@
+#!/usr/bin/tcsh
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Author : COSTE Arthur
+#Date : November 15th 2011
+
+#Purpose : The purpose of this script is to backmap the atlas fibers in each case and then generate the statistics 
+
+#STATUS : on dev
+
+# PLEASE READ THE README FILE
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------
+# defining program location 
+
+set toolloc = /usr/sci/projects/neuro/software/bin
+set fiberprocess_cmd = $toolloc/fiberprocess
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# defining data location
+
+set maindir = /usr/sci/projects/neuro/pediatric-dti/ace_dti_processing/dti_6m1y2y_allsites/processed_data/longitudinal_analysis
+set datadir = $maindir/data
+set scriptdir = $maindir/scripts
+set fiberdir = $maindir/data/atlas/Fiber_Tracking/Fibers
+set original_tensor_dir = $datadir/??????/???/dti_process_res
+set case_atlas_dir = $datadir/??????/case_atlas
+set direct_filesdir = $datadir/atlas_building_second_set/direct_atlas_building_files
+set indirect_filesdir = $datadir/atlas_building_second_set/indirect_atlas_building_files
+set fiber_tracking_dir = $datadir/atlas_building_second_set/fiber_tracking
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# defining external scripts
+ 
+set readfvpfiles_all_cmd = $scriptdir/readfvpfiles_all.script
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------
+echo
+echo "----------------------------------------------------------------------------------------------------------------------"
+echo "begining of fiber transpostion script"
+echo "----------------------------------------------------------------------------------------------------------------------"
+echo
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+set cpt = 1
+set atlas_direct = $direct_filesdir/atlas_files/direct_atlas.nrrd
+set atlas_indirect = $indirect_filesdir/atlas_files/indirect_atlas/indirect_atlas_composed.nrrd
+set bundle = internal_capsule
+
+# boolean value to select which pipeline you are working on
+set direct = 0
+
+foreach casedti ($original_tensor_dir)
+#foreach casedti ($case_atlas_dir)
+
+	if($direct) then
+
+		#echo $casedti
+		set case_id = $casedti:h:h:t
+		set case_age = $casedti:h:t
+		echo "processing directory $cpt : $case_id for direct atlas"
+
+		set case_fiber_dir =  $fiber_tracking_dir/direct_atlas_$bundle'_'fibers
+		if (! -e $case_fiber_dir) then
+			echo "creating $bundle directory"
+			mkdir $case_fiber_dir
+			echo "done"
+		endif
+
+		set atlas_fibers = $fiber_tracking_dir/fibers/$bundle/$bundle'_'fibers_687_23_test.fib
+
+		set transformation_field = $direct_filesdir/transformations_timepoint_2_direct_atlas/Greedy$case_id'_'$case_age'_'original_curvFADefFieldMeanToIm.mha
+		echo $transformation_field
+
+		set original_tensor = $casedti/$case_id'_'$case_age'_'dwi_QCed_DTI_masked.nrrd
+		echo $original_tensor
+
+		set case_bundle_fibers = $case_fiber_dir/$case_id'_'$case_age'_'$bundle'_'fibers.fib
+	
+		if(! -e $case_bundle_fibers) then
+			echo "transpostion of atlas fiber in case space"
+			$fiberprocess_cmd $atlas_fibers -o $case_bundle_fibers -H $transformation_field -T $original_tensor --no-warp
+			echo "done"
+		endif
+
+	endif
+
+	if(! $direct) then
+
+		#echo $casedti
+		set case_id = $casedti:h:h:t
+		set case_age = $casedti:h:t
+		echo "processing directory $cpt : $case_id for indirect atlas"
+
+		set case_fiber_dir =  $fiber_tracking_dir/indirect_atlas_$bundle'_'fibers
+		if (! -e $case_fiber_dir) then
+			echo "creating $bundle directory"
+			mkdir $case_fiber_dir
+			echo "done"
+		endif
+
+		set atlas_fibers = $fiber_tracking_dir/fibers/$bundle/$bundle'_'fibers_687_23_test.fib
+
+		set transformation_field = $indirect_filesdir/transformations/transformations_timepoint_2_indirect_atlas/$case_id'_'$case_age'_'to_indirect_atlas.mha
+		echo $transformation_field
+
+		set original_tensor = $casedti/$case_id'_'$case_age'_'dwi_QCed_DTI_masked.nrrd
+		echo $original_tensor
+
+		set case_bundle_fibers = $case_fiber_dir/$case_id'_'$case_age'_'$bundle'_'fibers.fib
+	
+		if(! -e $case_bundle_fibers) then
+			echo "transpostion of atlas fiber in case space"
+			$fiberprocess_cmd $atlas_fibers -o $case_bundle_fibers -H $transformation_field -T $original_tensor --no-warp
+			echo "done"
+		endif
+
+	endif
+	
+	@ cpt += 1
+
+end
+
+set statfilesdir = $case_fiber_dir/statfiles
+if(! -e $statfilesdir) mkdir -p $statfilesdir
+
+set fa_statfile = $statfilesdir/{$bundle}_fa_stat.csv
+set md_statfile = $statfilesdir/{$bundle}_md_stat.csv
+set fro_statfile = $statfilesdir/{$bundle}_fro_stat.csv
+set ad_statfile = $statfilesdir/{$bundle}_ad_stat.csv
+set rd_statfile = $statfilesdir/{$bundle}_rd_stat.csv
+
+set num_case = 0
+
+#foreach fvp ($original_tensor_dir)
+foreach fvp ($original_tensor_dir)
+
+	echo $fvp
+	set case_id = $fvp:h:h:t
+	set case_age = $fvp:h:t
+	echo $num_case
+	set fvpfiles = $case_fiber_dir/$case_id'_'$case_age'_'$bundle'_'fibers-FA-MD.fvp
+	echo $fvpfiles
+	@ num_case += 1
+
+	#Reading the file
+	#Get the number of lines:
+	set nblines_line = `head -n 5 $fvpfiles | tail -n 1`
+	set nblines = $nblines_line[3]
+	    
+	set X = 0
+	set nbpts = 0
+	set fa = $case_id
+	set md = $case_id
+	set fro = $case_id
+	set ad = $case_id
+	set rd = $case_id
+
+	set currline = 7
+	@ lastline = $currline + $nblines
+	    
+	while($currline < $lastline)
+
+	    set fullline = `head -n $currline $fvpfiles | tail -n 1`
+	    set X = ($X "\t" $fullline[1])
+	    set nbpts = ($nbpts "\t" $fullline[2])
+	    set fa = ($fa "\t" $fullline[7])
+	    set md = ($md "\t" $fullline[8])
+	    set fro = ($fro "\t" $fullline[9])
+	    set ad = ($ad "\t" $fullline[11])
+	    set rd = ($rd "\t" $fullline[12])
+
+	    @ currline = $currline + 1
+
+	end
+
+	#Writing files
+	if($num_case == 1) then
+	    echo $X >! $fa_statfile
+	    echo $nbpts >> $fa_statfile
+	endif
+	echo $fa >> $fa_statfile
+	if($num_case == 1) then
+	    echo $X >! $md_statfile
+	    echo $nbpts >> $md_statfile
+	endif
+	echo $md >> $md_statfile
+
+	if($num_case == 1) then
+	    echo $X >! $fro_statfile
+	    echo $nbpts >> $fro_statfile
+	endif
+	echo $fro >> $fro_statfile
+
+	if($num_case == 1) then
+	    echo $X >! $ad_statfile	
+	    echo $nbpts >> $ad_statfile
+	endif
+	echo $ad >> $ad_statfile
+
+	if($num_case == 1) then
+	    echo $X >! $rd_statfile	
+	    echo $nbpts >> $rd_statfile
+	endif
+	echo $rd >> $rd_statfile       
+
+end
+
+#Get all the diffusion values of a same bundle into the same file	
+	
+    set fa_statfile = $statfilesdir/{$bundle}_fa_stat.csv
+    set md_statfile = $statfilesdir/{$bundle}_md_stat.csv
+    set fro_statfile = $statfilesdir/{$bundle}_fro_stat.csv
+    set AD_statfile = $statfilesdir/{$bundle}_ad_stat.csv
+    set RD_statfile = $statfilesdir/{$bundle}_rd_stat.csv
+
+    set final_statfile = $statfilesdir/{$bundle}_all_diffusion_values.csv
+
+    echo "All diffusion values for $bundle" >! $final_statfile
+    echo "\n\n" >> $final_statfile
+
+    echo "FA Diffusion"  >> $final_statfile
+    more $fa_statfile >> $final_statfile
+    echo "\n\n" >> $final_statfile
+
+    echo "MD Diffusion"  >> $final_statfile
+    more $md_statfile >> $final_statfile
+    echo "\n\n" >> $final_statfile
+
+    echo "Frobenius Norm Diffusion"  >> $final_statfile
+    more $fro_statfile >> $final_statfile
+    echo "\n\n" >> $final_statfile
+
+    echo "Axial Diffusion"  >> $final_statfile
+    more $AD_statfile >> $final_statfile
+    echo "\n\n" >> $final_statfile
+
+    echo "Radial Diffusion"  >> $final_statfile
+    more $RD_statfile >> $final_statfile
+    echo "\n\n" >> $final_statfile
+
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------
+echo
+echo "----------------------------------------------------------------------------------------------------------------------"
+echo "end of fiber transpostion script"
+echo "----------------------------------------------------------------------------------------------------------------------"
