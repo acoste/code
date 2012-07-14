@@ -20,5 +20,5 @@ optional arguments:
   -sh SH         Header number of lines
   -gn GN         Number of input gradient directions
   -dl DL         Header line containing dimension of file
-  -dwil DWIL     Header line containing dimension of file
+  -dwil DWIL     Header line containing dwi pointed by header
 

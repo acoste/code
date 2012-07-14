@@ -34,7 +34,7 @@ parser.add_argument("-grad", type=int,help="Gradient Direction to remove")
 parser.add_argument("-sh", type=int,help="Header number of lines")
 parser.add_argument("-gn", type=int,help="Number of input gradient directions")
 parser.add_argument("-dl", type=int,help="Header line containing dimension of file")
-parser.add_argument("-dwil", type=int,help="Header line containing dimension of file")
+parser.add_argument("-dwil", type=int,help="Header line containing dwi pointed by header")
 args = parser.parse_args()
 
 #default values : number of grad dir = 25, dimension line = 7, header dimension = 20, dwil = 17
