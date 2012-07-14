@@ -1,0 +1,24 @@
+Author : COSTE Arthur
+Date : July 12th 2012
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+The purpose of this Python script is to process DWI headers in the Leave One Out / Leave Multiple Out pipeline.
+For a LOO use it once, for LMO use it several times to remove as many direction as you want.
+
+usage: text_file_processing.py [-h] [-v] [-i I] [-o O] [-dwi DWI] [-grad GRAD] [-sh SH] [-gn GN] [-dl DL] [-dwil DWIL]
+
+default values to use if LOO : sh = 20, gn = 25, dl = 7, dwil = 17 if LMO put the corresponding gn
+
+optional arguments:
+  -h, --help     show this help message and exit
+  -v, --verbose  output verbosity
+  -i I           Input hearder file path
+  -o O           Output modified header path
+  -dwi DWI       Associated DWI to the modified header
+  -grad GRAD     Gradient Direction to remove
+  -sh SH         Header number of lines
+  -gn GN         Number of input gradient directions
+  -dl DL         Header line containing dimension of file
+  -dwil DWIL     Header line containing dimension of file
+
