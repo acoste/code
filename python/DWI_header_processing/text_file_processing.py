@@ -67,8 +67,10 @@ numbering_discontinuity = header_number_of_lines+10
 dwi_line_2 = dwi_line-14
 encoding_line = dwi_line-4
 old_extension = "gzip"
-patho, new_extension = os.path.splitext(args.dwi)
+path, new_extension = os.path.splitext(args.dwi)
 #processing
+
+print "-----------------------------------------------------------------------------------------------------------"
 
 if args.i and args.o and args.grad and args.sh and args.gn and args.dl and args.dwil:
 
@@ -88,7 +90,7 @@ if args.i and args.o and args.grad and args.sh and args.gn and args.dl and args.
 			if i == dwi_line_2:
 				if args.verbose: print "new dwi associated to new header: ", dwi_file
 				base_content = "content: exists("
-				old_content = base_content + str(args.i.replace(".nhdr",".raw")) +str(",0)")
+				old_content = base_content + str(os.path.basename(args.i.replace(".nhdr",".raw"))) +str(",0)")
 				new_content = base_content + str(args.dwi) +str(",0)")
 				if args.verbose: print old_content
 				if args.verbose: print new_content
@@ -98,7 +100,7 @@ if args.i and args.o and args.grad and args.sh and args.gn and args.dl and args.
 				if args.verbose: print "new dimension of set is now: ", new_dimension
 				new_file.write(line.replace(str(old_dimension),str(new_dimension),1))
 
-			if i == encoding_line:
+			if i == encoding_line and old_extension == "gzip":
 				if args.verbose: print "new file extension is ", new_extension
 				base_encoding = "encoding: "
 				old_encoding = base_encoding + str(old_extension) 
@@ -110,8 +112,10 @@ if args.i and args.o and args.grad and args.sh and args.gn and args.dl and args.
 			if i == dwi_line:
 				if args.verbose: print "new dwi associated to new header: ", dwi_file
 				base_dim = "data file: "
-				old_str = base_dim + str(args.i.replace(".nhdr",""))+str(".raw.gz")
+				old_str = base_dim + str(os.path.basename(args.i.replace(".nhdr",".raw")))
 				new_str = base_dim + str(args.dwi) 
+				if args.verbose: print old_str
+				if args.verbose: print new_str
 				new_file.write(line.replace(old_str,new_str,1))
 
 			if i == line_grad:				# we do not copy the associated information
@@ -147,3 +151,4 @@ if args.i and args.o and args.grad and args.sh and args.gn and args.dl and args.
 		new_file.close()
 
 else: print "ERROR : MISSING ARGUMENTS"
+print "-----------------------------------------------------------------------------------------------------------"

@@ -23,4 +23,5 @@ optional arguments:
   -dl DL         Header line containing dimension of file
   -dwil DWIL     Header line containing dwi pointed by header
 
-Update : Modification of file extension done on July 16th 2012
+Update : Modification of file extension done on July 16th 2012 
+	 Path Management (i.e if scritp and data are in different folders... which is really useful !)
