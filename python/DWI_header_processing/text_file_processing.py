@@ -2,10 +2,10 @@
 
 #Author : Arthur COSTE
 #Creation Date : July 12th, 2012
-#Update Date : July 13th, 2012
+#Update Date : July 16th, 2012
 
 #Status : Working
-# Version : (RC) 1.0
+# Version : (RC) 1.1
 
 #Purpose : this script is processing DWI headers to remove certain gradient directions 
 #	   We have to modify the dimension, the pointed DWI and the gradient directions set
@@ -23,6 +23,7 @@
 #-----------------------------------------------------------------------------------------------------------------------
 
 import argparse
+import os
 
 #parsing command line arguments
 parser = argparse.ArgumentParser(epilog="Default Values for nhdr file : sh=20, gn=25, dl=7, dwil=17")
@@ -64,7 +65,9 @@ old_dimension = number_of_gd+1
 new_dimension = number_of_gd
 numbering_discontinuity = header_number_of_lines+10
 dwi_line_2 = dwi_line-14
-
+encoding_line = dwi_line-4
+old_extension = "gzip"
+patho, new_extension = os.path.splitext(args.dwi)
 #processing
 
 if args.i and args.o and args.grad and args.sh and args.gn and args.dl and args.dwil:
@@ -95,6 +98,15 @@ if args.i and args.o and args.grad and args.sh and args.gn and args.dl and args.
 				if args.verbose: print "new dimension of set is now: ", new_dimension
 				new_file.write(line.replace(str(old_dimension),str(new_dimension),1))
 
+			if i == encoding_line:
+				if args.verbose: print "new file extension is ", new_extension
+				base_encoding = "encoding: "
+				old_encoding = base_encoding + str(old_extension) 
+				new_encoding = base_encoding + str(new_extension.replace(".","",1)) 
+				if args.verbose: print old_encoding
+				if args.verbose: print new_encoding
+				new_file.write(line.replace(old_encoding,new_encoding,1))
+
 			if i == dwi_line:
 				if args.verbose: print "new dwi associated to new header: ", dwi_file
 				base_dim = "data file: "
@@ -106,7 +118,7 @@ if args.i and args.o and args.grad and args.sh and args.gn and args.dl and args.
 				print "removing gradient :", remove_gd
 				pass
 
-			if i < line_grad and  i != dimension_line and i != dwi_line and i != dwi_line_2:		#while inferior at the chosen we don't change anything
+			if i < line_grad and  i != dimension_line and i != dwi_line and i != dwi_line_2 and i != encoding_line:		#while inferior at the chosen we don't change anything
 				new_file.write(line)
 
 			if i > line_grad and i<=end_of_modifications:	#then we process grad dirs with a small trick for numbers		

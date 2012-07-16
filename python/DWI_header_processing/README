@@ -1,6 +1,7 @@
 Author : COSTE Arthur
 Date : July 12th 2012
 
+Update : July 16th, 2012
 ----------------------------------------------------------------------------------------------------------------------------------
 
 The purpose of this Python script is to process DWI headers in the Leave One Out / Leave Multiple Out pipeline.
@@ -22,3 +23,4 @@ optional arguments:
   -dl DL         Header line containing dimension of file
   -dwil DWIL     Header line containing dwi pointed by header
 
+Update : Modification of file extension done on July 16th 2012
