@@ -24,4 +24,4 @@ optional arguments:
   -dwil DWIL     Header line containing dwi pointed by header
 
 Update : Modification of file extension done on July 16th 2012 
-	 Path Management (i.e if scritp and data are in different folders... which is really useful !)
+	 Path Management (i.e if script and data are in different folders)
