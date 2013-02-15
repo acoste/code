@@ -1,0 +1,12 @@
+Author : COSTE Arthur
+Creation Date : February 15th, 2013
+Contact : acoste@sci.utah.edu
+
+---------------------------------------------------------------------------------
+
+Here are some functions I implemented for the Grad class CS6320 at the School Of Computing, University of Utah during the Spring semester 2013.
+
+Camera_Calibration : with an input picture of the grid, we match points on the image with their real coordinates in the world and estimate the intrinsic and extrinsic parameters associated with the camera.
+
+Stereography an multiple camera views : Depth reconstruction using multiple images or cameras
+

@@ -1,0 +1,9 @@
+Author : COSTE Arthur
+Creation Date : February 15th, 2013
+Contact : acoste@sci.utah.edu
+
+---------------------------------------------------------------------------------
+
+Here are some functions I implemented for the Graduate Image Processing class CS6640 at the School Of Computing, University of Utah during the Fall semester 2012.
+
+There are histogram basic operations, basic filtering, convolution, pattern detection based on cross correlation, Hough Transform, Affine Image Registration, An active contour implementation using Variation Calculus Approach
