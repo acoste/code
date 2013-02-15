@@ -1,0 +1,23 @@
+PROJECT (Image_threshold)
+
+cmake_minimum_required(VERSION 2.4)
+
+FIND_PACKAGE(ITK)
+
+IF(ITK_FOUND)
+	INCLUDE(${USE_ITK_FILE})
+ELSE(ITK_FOUND)
+	MESSAGE("ITK NOT FOUND !")
+ENDIF(ITK_FOUND)
+
+SET(CXX_FILES
+	main.cxx
+)
+SET(H_FILES
+)
+
+MESSAGE("CXX_files : ${CXX_FILES}")
+MESSAGE("H_files : ${H_FILES}")
+
+ADD_EXECUTABLE(Image_threshold ${CXX_FILES} ${H_FILES})
+TARGET_LINK_LIBRARIES(Image_threshold ${ITK_LIBRARIES})
