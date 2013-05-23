@@ -1,0 +1,201 @@
+#!/usr/bin/tcsh
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+#
+# Author : COSTE Arthur
+# Date : April 28th, 2013
+#
+# Function : Check DTI existence, Protocol (25 vs 65 directions) and generate associated colorFA in a dedicated directory
+#
+# Input : QCed DTIs resulting from DTIPrep
+#
+# Output : ColorFA volumes
+#
+# Status : Working
+#
+# Version : check_generate v1
+#
+# Database update + 253 cases
+#
+# Note : Require dtiprocess to be run on kraken if unavailable on your machine
+#
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+# Data location
+
+set data_dir = /usr/sci/projects/neuro/clinical_studies/ACE_IBIS/projects/Data_From_UNC/Proc_Data
+set curvfa_dir = /usr/sci/projects/neuro/clinical_studies/ACE_IBIS/projects/Data_From_UNC/Proc_Data/all_curvFA
+
+set output_dir = /usr/sci/projects/neuro/clinical_studies/ACE_IBIS/projects/ColorFA_QC/data/all_colorFA
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+# Tools
+
+set toolloc = /usr/sci/projects/neuro/software/bin
+set unu_cmd = $toolloc/unu
+set dtiprocess_cmd = /usr/sci/projects/neuro/software/bin/dtiprocess
+
+#----------------------------------------------------------------------------------------------------------------------------------------------
+
+echo "---------------------------------------------------------------------------------------------------------------------"
+echo
+echo "\033[s\033[1;32m\t\t\t\t begining of Check and Generate SCRIPT for COLORFA QC"
+echo "\t\t\t\t\t\t version 1 - April 2013 \033[u\033[0m"
+echo
+echo "---------------------------------------------------------------------------------------------------------------------"
+
+echo
+echo "options : "
+echo "> Default Verbose Mode: ON"
+echo "---------------------------------------------------------------------------------------------------------------------"
+
+#----------------------------------------------------------------------------------------------------------------------------------------------
+# Main Code
+
+#set all_cases = $data_dir/??????/V??
+
+#cpt initialization
+set cpt = 1
+set new_data = 0
+set new_25 = 0
+set new_65 = 0
+set no_baselinecpt = 1
+set case_65 = ()
+set all_cases = `ls $data_dir/*/???/mri/native/DTI/DTIPrep_QC*/*_QCed_DTI.nrrd`
+echo $#all_cases
+	
+foreach dti ($all_cases)
+
+	set case_id = $dti:h:h:h:h:h:h:t
+	set case_age = $dti:h:h:h:h:h:t
+	set case_directions_directory = $dti:h:t
+	#echo $case_directions_directory
+	#echo "case dir var = $dti"
+
+	#echo $dwi
+	#echo `expr match "$dwi" '\([0-9][0-9][0-9]\)'` 
+	set intro = `echo $dti:t | cut -d_ -f1`
+	#echo $intro
+	
+	if ($intro == "ibis") then
+			
+		set a = `echo $dti:t | cut -d_ -f5`
+		set acquisition_number = '_'$a
+		#echo "acquisition number = $acquisition_number" 	
+	
+	endif
+
+	if ($intro != "ibis") then
+
+		set ind = `echo $dti:t | cut -c15-16`
+		set ind_2 = `echo $dti:t | cut -c19-20`
+		#echo $ind
+		#echo $ind_2
+
+		if($ind == "_Q") then
+		    set ind = ''
+		    #echo $ind
+	      
+		else if ($ind == "_D") then
+   
+		    if ( $ind_2 == "_2") then
+			set ind =  $ind_2 
+		else if ($ind_2 == "_3") then
+			set ind = $ind_2
+		else if ($ind_2 == "_4") then
+			set ind = $ind_2 
+		else if ($ind_2 == "_5") then
+			set ind = $ind_2 
+		#else if ($ind_2 == "_6") then
+			#set ind = $ind_2 
+		else if ($ind_2 == "_7") then
+			set ind = $ind_2 
+		else if ($ind_2 == "_8") then
+			set ind = $ind_2 
+		else if ($ind_2 == "_9") then
+			set ind = $ind_2 
+		    else 
+		    set ind = ''
+		    #echo $ind
+
+		    endif
+		endif
+		#echo $ind 
+			
+		set acquisition_number = $ind
+		#echo "acquisition number = $acquisition_number" 	
+	
+	endif
+
+	echo "processing case $cpt : $case_id $case_age"
+	set current_dir = $dti:h
+	echo $current_dir
+	set dwi = $current_dir/*'_'QCed.nrrd
+	#get number of directions (DTI(25) vs HARDI(65))
+	set temp_size = `sed -n '7p' $dwi`
+	set nb_directions = $temp_size[2]
+	#echo $nb_directions
+
+	
+	#set baseline = `sed -n '16p' $dwi`
+	#set baseline = `echo $baseline:t | cut -d= -f2`
+	#set baseline_1 = `echo $baseline:t | cut -d' ' -f1`
+	#set baseline_2 = `echo $baseline:t | cut -d' ' -f2`
+	#set baseline_3 = `echo $baseline:t | cut -d' ' -f3`
+	
+	
+	#if ($baseline_1 != "0.000000" && $baseline_2 != "0.000000" && $baseline_3 != "0.000000") then
+		
+		#echo "\t baseline : $baseline "		
+		#echo "\t \033[s\033[1;31mNO BASELINE DETECTED !\033[u\033[0m"		
+		#set nobaseline = ($nobaseline $case_id'_'$case_age$acquisition_number) 
+		#@ no_baselinecpt ++
+		
+
+	#endif
+
+	set colorFA_25_dirs_volume = $output_dir/25dirs/$case_id'_'$case_age$acquisition_number'_'QCed_ColorFA.nrrd
+	if ($nb_directions < 27) then
+		if ( $case_directions_directory != "DTIPrep_QC_65dir") then
+			if(! -e $colorFA_25_dirs_volume) then
+				echo "\033[s\033[1;32mCompute ColorFA 25 dirs >>> \c"
+				$dtiprocess_cmd $dti -c $colorFA_25_dirs_volume 
+				@ new_data += 1
+				@ new_25 += 1
+				echo "[done]\033[u\033[0m"
+			endif
+		endif
+	endif
+
+	set colorFA_65_dirs_volume = $output_dir/65dirs/$case_id'_'$case_age'_'$acquisition_number'_'QCed_ColorFA.nrrd
+	if ($nb_directions > 27 && $case_directions_directory == "DTIPrep_QC_65dir" )then
+		if (! -e $colorFA_65_dirs_volume) then
+			#echo $dti
+			echo "\033[s\033[1;34mCompute ColorFA 65 dirs >>> \c"
+			$dtiprocess_cmd $dti -c $colorFA_65_dirs_volume 
+			@ new_data += 1
+			@ new_65 += 1
+			echo "[done]\033[u\033[0m"
+		endif
+	endif
+
+	if ($nb_directions > 27)then
+
+		echo "65 directions not in accurate directory"
+		echo $nb_directions
+		set case_65 = ($case_65 $case_id'_'$case_age$acquisition_number) 
+	endif
+
+	@ cpt += 1 
+
+end
+
+#echo "list of cases with no baseline : $nobaseline"
+#echo $#nobaseline
+
+echo
+echo "---------------------------------------------------------------------------------------------------------------------"
+echo
+echo "\t\t\t\t end of Check and Generate SCRIPT for COLORFA QC"
+echo "\t\t\t\t     \033[s\033[1;32m$new_data new image(s) found ($new_25 DTI and $new_65 HARDI)\033[u\033[0m"
+echo
+echo "---------------------------------------------------------------------------------------------------------------------"
